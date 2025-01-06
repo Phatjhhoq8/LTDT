@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Editor</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .left-section {
+            flex: 1;
+            background-color: #f0f0f0;
+            border-right: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+
+        .button-row {
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            background-color: #f0f0f0;
+            padding-top: 20px;
+            z-index: 10;
+        }
+
+        .button-row button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .button-row button:hover {
+            background: #0056b3;
+        }
+
+        .right-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .input-section {
+            flex: 0.65;
+            margin-bottom: 20px;
+            overflow-y: auto;
+        }
+
+        .input-section input,
+        .input-section textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .buttons button {
+            flex: 1;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .buttons button:hover {
+            background: #0056b3;
+        }
+
+        .graph-section {
+            flex: 0.35;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-top: 1px solid #ccc;
+        }
+
+        #graph-container {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            background-color: #fff;
+        }
+
+        .resizer {
+            height: 5px;
+            background: #ccc;
+            cursor: row-resize;
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .input-section,
+        .graph-section {
+            overflow: hidden;
+            position: relative;
+        }
+
+        .function-content {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e7e7e7;
+            border-radius: 5px;
+            width: 100%;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Nửa trái: Nút chức năng -->
+        <div class="left-section">
+            <div class="button-row">
+                <button onclick="openFunctionContent(1)">Thông tin đồ thị</button>
+                <button onclick="openFunctionContent(2)">Duyệt đồ thị </button>
+                <button onclick="openFunctionContent(3)">Function 3</button>
+                <button onclick="openFunctionContent(4)">Function 4</button>
+                <button onclick="openFunctionContent(5)">Function 5</button>
+                <button onclick="openFunctionContent(6)">Function 6</button>
+            </div>
+
+            <!-- Div nội dung chức năng sẽ thay đổi khi bấm nút -->
+            <div id="function-content" class="function-content"></div>
+        </div>
+
+        <!-- Nửa phải: Phần nhập liệu và đồ thị -->
+        <div class="right-section">
+            <!-- Phần nhập liệu -->
+            <div class="input-section" id="input-section">
+                <h2>Graph Editor</h2>
+                <label for="node-count">Node Count:</label>
+                <input type="number" id="node-count" min="1" placeholder="6">
+                <h3>Graph Data:</h3>
+                <textarea id="graph-data" rows="5" placeholder='1 2&#10;1 4&#10;1 5'></textarea>
+                <div class="buttons">
+                    <button id="undirected-btn" onclick="setGraphType('undirected')">Undirected</button>
+                    <button id="directed-btn" onclick="setGraphType('directed')">Directed</button>
+                    <button onclick="drawGraph()">Draw Graph</button>
+                </div>
+            </div>
+
+            <!-- Thanh kéo -->
+            <div class="resizer" id="resizer"></div>
+
+            <!-- Phần đồ thị -->
+            <div class="graph-section" id="graph-section">
+                <div id="graph-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape/dist/cytoscape.min.js"></script>
+    <script>
+        let graphType = "undirected"; 
+
+        
+        function setGraphType(type) {
+            graphType = type;
+            alert(`Graph type set to: ${type}`);
+        }
+
+        
+        function drawGraph() {
+            const nodeCount = parseInt(document.getElementById("node-count").value);
+            n = nodeCount;
+            const graphData = document.getElementById("graph-data").value.trim();
+            graph = graphData;
+            
+            const nodes = Array.from({ length: nodeCount }, (_, i) => ({
+                data: { id: (i + 1).toString(), label: (i + 1).toString() }
+            }));
+
+            
+            const edges = graphData.split("\n").map((line) => {
+                const [source, target] = line.split(" ");
+                return { data: { source, target, directed: graphType === "directed" } };
+            });
+
+            
+            document.getElementById("graph-container").innerHTML = "";
+
+            
+            const cy = cytoscape({
+                container: document.getElementById("graph-container"),
+                elements: [...nodes, ...edges],
+                style: [
+                    {
+                        selector: "node",
+                        style: {
+                            "background-color": "#fff",   
+                            "label": "data(label)",       
+                            "text-valign": "center",      
+                            "color": "#000",               
+                            "font-size": "12px",         
+                            "border-width": "1px",        
+                            "border-color": "#000",      
+                            "border-style": "solid",     
+                        }
+                    },
+                    {
+                        selector: "edge",
+                        style: {
+                            "width": 2,
+                            "line-color": "#aaa",
+                            "target-arrow-color": "#aaa",
+                            "target-arrow-shape": graphType === "directed" ? "triangle" : "none",
+                            "curve-style": "bezier"
+                        }
+                    }
+                ],
+                layout: { name: "circle" }
+            });
+        }
+
+        const resizer = document.getElementById('resizer');
+        const inputSection = document.getElementById('input-section');
+        const graphSection = document.getElementById('graph-section');
+        let isResizing = false;
+
+        // Sự kiện bắt đầu kéo
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'row-resize';
+        });
+
+        // Sự kiện di chuột
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerHeight = document.querySelector('.right-section').offsetHeight;
+            const inputHeight = e.clientY - inputSection.offsetTop;
+
+            // Đảm bảo không vượt quá giới hạn
+            const minHeight = 50; // Chiều cao tối thiểu
+            const maxHeight = containerHeight - minHeight;
+
+            if (inputHeight >= minHeight && inputHeight <= maxHeight) {
+                inputSection.style.flex = `0 0 ${inputHeight}px`;
+                resizer.style.flex = `0 0 ${5}px`;
+                graphSection.style.flex = `0 0 ${containerHeight - inputHeight - 5}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+        var n, graph;
+        function openFunctionContent(functionNumber) {
+            const contentDiv = document.getElementById("function-content");
+            contentDiv.innerHTML = "";
+            let divFunction = document.createElement('div');
+
+            const edges = graph.split("\n").map(line => {
+                const [source, target] = line.split(" ");
+                return [parseInt(source), parseInt(target)];
+            });
+
+            // Khởi tạo ma trận đỉnh-đỉnh
+            let matrix = Array.from({ length: n }, () => Array(n).fill(0));
+
+            // Bậc của mỗi đỉnh và đỉnh kề
+            let degrees = Array(n).fill(0);  
+            let indegrees = Array(n).fill(0);
+            let outdegrees = Array(n).fill(0);
+            let adjacencyList = Array.from({ length: n }, () => []);  
+
+            // Điền giá trị vào ma trận và cập nhật bậc, đỉnh kề
+            if (graphType == "undirected") {
+                edges.forEach(([source, target]) => {
+                    matrix[source - 1][target - 1] = 1;
+                    matrix[target - 1][source - 1] = 1;
+                    degrees[source - 1]++; // 
+                    degrees[target - 1]++; // 
+                    adjacencyList[source - 1].push(target); 
+                    adjacencyList[target - 1].push(source); 
+                });
+            } else {
+                edges.forEach(([source, target]) => {
+                    matrix[source - 1][target - 1] = 1;
+                    indegrees[target - 1]++; 
+                    outdegrees[source - 1]++;
+                    adjacencyList[source - 1].push(target);
+                });
+            }
+
+            // Hiển thị thông tin bậc và các đỉnh kề
+            if (functionNumber == 1) {
+                let h2 = document.createElement('h2');
+                if (graphType == "undirected") h2.textContent = "Thông tin đồ thị vô hướng: ";
+                else h2.textContent = "Thông tin đồ thị có hướng: ";
+                divFunction.appendChild(h2);
+
+                // In ra bậc và đỉnh kề của từng đỉnh
+                let infoDiv = document.createElement('div');
+                infoDiv.innerHTML = "<h3>Bậc và đỉnh kề của các đỉnh:</h3>";
+
+                let list = document.createElement('ul');
+                for (let i = 0; i < n; i++) {
+                    let listItem = document.createElement('li');
+                    let degreeInfo;
+                    if (graphType == "undirected") degreeInfo = `Đỉnh ${i + 1} có bậc: ${degrees[i]}. Các đỉnh kề: [${adjacencyList[i].join(", ")}]`;
+                    else degreeInfo = `Đỉnh ${i + 1} có bậc vào: ${indegrees[i]} và bậc ra: ${outdegrees[i]}. Các đỉnh kề: [${adjacencyList[i].join(", ")}]`;
+                    listItem.textContent = degreeInfo;
+                    list.appendChild(listItem);
+                }
+                infoDiv.appendChild(list);
+                divFunction.appendChild(infoDiv);
+            } else if (functionNumber == 2) {
+                let divFunction = document.createElement('div');
+
+                // Thêm tiêu đề
+                let h2 = document.createElement('h2');
+                h2.textContent = "Duyệt đồ thị:";
+                divFunction.appendChild(h2);
+
+                // Tạo ô nhập liệu cho đỉnh bắt đầu
+                let startNodeInput = document.createElement('input');
+                startNodeInput.type = "number";
+                startNodeInput.id = "start-node";
+                startNodeInput.min = 1;
+                startNodeInput.max = n;
+                startNodeInput.placeholder = "Nhập đỉnh bắt đầu";
+                divFunction.appendChild(startNodeInput);
+
+                // Tạo hai nút BFS và DFS
+                let bfsButton = document.createElement('button');
+                bfsButton.textContent = "Duyệt BFS";
+                bfsButton.onclick = () => {
+                    bfsTraversal(parseInt(startNodeInput.value) - 1);
+                };
+                divFunction.appendChild(bfsButton);
+
+                let dfsButton = document.createElement('button');
+                dfsButton.textContent = "Duyệt DFS";
+                dfsButton.onclick = () => {
+                    dfsTraversal(parseInt(startNodeInput.value) - 1);
+                };
+                divFunction.appendChild(dfsButton);
+
+                // Hàm Duyệt BFS
+                function bfsTraversal(startNode) {
+                    let visited = Array(n).fill(false);
+                    let queue = [startNode];
+                    let order = [];
+                    let parent = Array(n).fill(null);
+
+                    visited[startNode] = true;
+
+                    while (queue.length > 0) {
+                        let currentNode = queue.shift();
+                        order.push(currentNode);
+
+                        adjacencyList[currentNode].forEach((neighbor) => {
+                            if (!visited[neighbor - 1]) {
+                                visited[neighbor - 1] = true;
+                                parent[neighbor - 1] = currentNode + 1;
+                                queue.push(neighbor - 1);
+                            }
+                        });
+                    }
+
+                    // Hiển thị thứ tự duyệt BFS và đỉnh cha
+                    let orderDiv = document.createElement('div');
+                    orderDiv.innerHTML = "<h3>Thứ tự duyệt BFS:</h3>";
+                    let orderList = document.createElement('ul');
+                    order.forEach(node => {
+                        let listItem = document.createElement('li');
+                        listItem.textContent = `Đỉnh ${node + 1}`;
+                        orderList.appendChild(listItem);
+                    });
+                    orderDiv.appendChild(orderList);
+
+                    let parentDiv = document.createElement('div');
+                    parentDiv.innerHTML = "<h3>Đỉnh cha của các đỉnh:</h3>";
+                    let parentList = document.createElement('ul');
+                    for (let i = 0; i < parent.length; i++) {
+                        let listItem = document.createElement('li');
+                        if (parent[i] !== null) {
+                            listItem.textContent = `Đỉnh ${i + 1} có đỉnh cha: ${parent[i]}`;
+                        } else if(i+1==startNodeInput.value) {
+                            listItem.textContent = `Đỉnh ${i + 1} không có đỉnh cha (là đỉnh bắt đầu)`;
+                        }else{
+                            listItem.textContent = `Đỉnh ${i + 1} không được duyệt`;
+                        }
+                        parentList.appendChild(listItem);
+                    }
+                    parentDiv.appendChild(parentList);
+
+                    divFunction.appendChild(orderDiv);
+                    divFunction.appendChild(parentDiv);
+                    contentDiv.innerHTML = ""; // Xóa nội dung cũ trước khi thêm mới
+                    contentDiv.appendChild(divFunction);
+                }
+
+                // Hàm Duyệt DFS
+                function dfsTraversal(startNode) {
+                    let visited = Array(n).fill(false);
+                    let order = [];
+                    let parent = Array(n).fill(null); 
+
+                    function dfs(node) {
+                        visited[node] = true;
+                        order.push(node);
+
+                        adjacencyList[node].forEach((neighbor) => {
+                            if (!visited[neighbor - 1]) {
+                                parent[neighbor - 1] = node + 1;
+                                dfs(neighbor - 1);
+                            }
+                        });
+                    }
+
+                    dfs(startNode);
+
+                    // Hiển thị thứ tự duyệt DFS và đỉnh cha
+                    let orderDiv = document.createElement('div');
+                    orderDiv.innerHTML = "<h3>Thứ tự duyệt DFS:</h3>";
+                    let orderList = document.createElement('ul');
+                    order.forEach(node => {
+                        let listItem = document.createElement('li');
+                        listItem.textContent = `Đỉnh ${node + 1}`;
+                        orderList.appendChild(listItem);
+                    });
+                    orderDiv.appendChild(orderList);
+
+                    let parentDiv = document.createElement('div');
+                    parentDiv.innerHTML = "<h3>Đỉnh cha của các đỉnh:</h3>";
+                    let parentList = document.createElement('ul');
+                    for (let i = 0; i < parent.length; i++) {
+                        let listItem = document.createElement('li');
+                        if (parent[i] !== null) {
+                            listItem.textContent = `Đỉnh ${i + 1} có đỉnh cha: ${parent[i]}`;
+                        }else if(i+1==startNodeInput.value){
+                            listItem.textContent = `Đỉnh ${i + 1} không có đỉnh cha (là đỉnh bắt đầu)`;
+                        } else {
+                            listItem.textContent = `Đỉnh ${i + 1} không được duyệt`;
+                        }
+                        parentList.appendChild(listItem);
+                    }
+                    parentDiv.appendChild(parentList);
+
+                    divFunction.appendChild(orderDiv);
+                    divFunction.appendChild(parentDiv);
+                    contentDiv.innerHTML = ""; 
+                    contentDiv.appendChild(divFunction);
+                }
+
+                contentDiv.innerHTML = ""; 
+                contentDiv.appendChild(divFunction);
+            }
+
+            contentDiv.appendChild(divFunction);
+            contentDiv.style.display = "block";
+        }
+
+
+    </script>
+</body>
+
+</html>
