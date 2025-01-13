@@ -47,7 +47,7 @@
 
         .button-row button {
             padding: 10px 20px;
-            background: #007bff;
+            background: #00ceff;
             color: #fff;
             border: none;
             border-radius: 5px;
@@ -90,7 +90,7 @@
         .buttons button {
             flex: 1;
             padding: 10px;
-            background: #007bff;
+            background: #00ceff;
             color: #fff;
             border: none;
             border-radius: 5px;
@@ -144,24 +144,20 @@
 
 <body>
     <div class="container">
-        <!-- Nửa trái: Nút chức năng -->
         <div class="left-section">
             <div class="button-row">
                 <button onclick="openFunctionContent(1)">Thông tin đồ thị</button>
                 <button onclick="openFunctionContent(2)">Duyệt đồ thị </button>
-                <button onclick="openFunctionContent(3)">Function 3</button>
-                <button onclick="openFunctionContent(4)">Function 4</button>
+                <button onclick="openFunctionContent(3)">Tính chu trình</button>
+                <button onclick="openFunctionContent(4)">Thành phần liên thông</button>
                 <button onclick="openFunctionContent(5)">Function 5</button>
                 <button onclick="openFunctionContent(6)">Function 6</button>
             </div>
 
-            <!-- Div nội dung chức năng sẽ thay đổi khi bấm nút -->
             <div id="function-content" class="function-content"></div>
         </div>
 
-        <!-- Nửa phải: Phần nhập liệu và đồ thị -->
         <div class="right-section">
-            <!-- Phần nhập liệu -->
             <div class="input-section" id="input-section">
                 <h2>Graph Editor</h2>
                 <label for="node-count">Node Count:</label>
@@ -175,10 +171,8 @@
                 </div>
             </div>
 
-            <!-- Thanh kéo -->
             <div class="resizer" id="resizer"></div>
 
-            <!-- Phần đồ thị -->
             <div class="graph-section" id="graph-section">
                 <div id="graph-container"></div>
             </div>
@@ -187,35 +181,35 @@
 
     <script src="https://cdn.jsdelivr.net/npm/cytoscape/dist/cytoscape.min.js"></script>
     <script>
-        let graphType = "undirected"; 
+        let graphType = "undirected";
 
-        
+
         function setGraphType(type) {
             graphType = type;
             alert(`Graph type set to: ${type}`);
         }
 
-        
+
         function drawGraph() {
             const nodeCount = parseInt(document.getElementById("node-count").value);
             n = nodeCount;
             const graphData = document.getElementById("graph-data").value.trim();
             graph = graphData;
-            
+
             const nodes = Array.from({ length: nodeCount }, (_, i) => ({
                 data: { id: (i + 1).toString(), label: (i + 1).toString() }
             }));
 
-            
+
             const edges = graphData.split("\n").map((line) => {
                 const [source, target] = line.split(" ");
                 return { data: { source, target, directed: graphType === "directed" } };
             });
 
-            
+
             document.getElementById("graph-container").innerHTML = "";
 
-            
+
             const cy = cytoscape({
                 container: document.getElementById("graph-container"),
                 elements: [...nodes, ...edges],
@@ -223,14 +217,14 @@
                     {
                         selector: "node",
                         style: {
-                            "background-color": "#fff",   
-                            "label": "data(label)",       
-                            "text-valign": "center",      
-                            "color": "#000",               
-                            "font-size": "12px",         
-                            "border-width": "1px",        
-                            "border-color": "#000",      
-                            "border-style": "solid",     
+                            "background-color": "#fff",
+                            "label": "data(label)",
+                            "text-valign": "center",
+                            "color": "#000",
+                            "font-size": "12px",
+                            "border-width": "1px",
+                            "border-color": "#000",
+                            "border-style": "solid",
                         }
                     },
                     {
@@ -253,20 +247,17 @@
         const graphSection = document.getElementById('graph-section');
         let isResizing = false;
 
-        // Sự kiện bắt đầu kéo
         resizer.addEventListener('mousedown', (e) => {
             isResizing = true;
             document.body.style.cursor = 'row-resize';
         });
 
-        // Sự kiện di chuột
         document.addEventListener('mousemove', (e) => {
             if (!isResizing) return;
             const containerHeight = document.querySelector('.right-section').offsetHeight;
             const inputHeight = e.clientY - inputSection.offsetTop;
 
-            // Đảm bảo không vượt quá giới hạn
-            const minHeight = 50; // Chiều cao tối thiểu
+            const minHeight = 50;
             const maxHeight = containerHeight - minHeight;
 
             if (inputHeight >= minHeight && inputHeight <= maxHeight) {
@@ -293,42 +284,37 @@
                 return [parseInt(source), parseInt(target)];
             });
 
-            // Khởi tạo ma trận đỉnh-đỉnh
             let matrix = Array.from({ length: n }, () => Array(n).fill(0));
 
-            // Bậc của mỗi đỉnh và đỉnh kề
-            let degrees = Array(n).fill(0);  
+            let degrees = Array(n).fill(0);
             let indegrees = Array(n).fill(0);
             let outdegrees = Array(n).fill(0);
-            let adjacencyList = Array.from({ length: n }, () => []);  
+            let adjacencyList = Array.from({ length: n }, () => []);
 
-            // Điền giá trị vào ma trận và cập nhật bậc, đỉnh kề
             if (graphType == "undirected") {
                 edges.forEach(([source, target]) => {
                     matrix[source - 1][target - 1] = 1;
                     matrix[target - 1][source - 1] = 1;
-                    degrees[source - 1]++; // 
-                    degrees[target - 1]++; // 
-                    adjacencyList[source - 1].push(target); 
-                    adjacencyList[target - 1].push(source); 
+                    degrees[source - 1]++;
+                    degrees[target - 1]++;
+                    adjacencyList[source - 1].push(target);
+                    adjacencyList[target - 1].push(source);
                 });
             } else {
                 edges.forEach(([source, target]) => {
                     matrix[source - 1][target - 1] = 1;
-                    indegrees[target - 1]++; 
+                    indegrees[target - 1]++;
                     outdegrees[source - 1]++;
                     adjacencyList[source - 1].push(target);
                 });
             }
 
-            // Hiển thị thông tin bậc và các đỉnh kề
             if (functionNumber == 1) {
                 let h2 = document.createElement('h2');
                 if (graphType == "undirected") h2.textContent = "Thông tin đồ thị vô hướng: ";
                 else h2.textContent = "Thông tin đồ thị có hướng: ";
                 divFunction.appendChild(h2);
 
-                // In ra bậc và đỉnh kề của từng đỉnh
                 let infoDiv = document.createElement('div');
                 infoDiv.innerHTML = "<h3>Bậc và đỉnh kề của các đỉnh:</h3>";
 
@@ -346,12 +332,10 @@
             } else if (functionNumber == 2) {
                 let divFunction = document.createElement('div');
 
-                // Thêm tiêu đề
                 let h2 = document.createElement('h2');
                 h2.textContent = "Duyệt đồ thị:";
                 divFunction.appendChild(h2);
 
-                // Tạo ô nhập liệu cho đỉnh bắt đầu
                 let startNodeInput = document.createElement('input');
                 startNodeInput.type = "number";
                 startNodeInput.id = "start-node";
@@ -360,7 +344,6 @@
                 startNodeInput.placeholder = "Nhập đỉnh bắt đầu";
                 divFunction.appendChild(startNodeInput);
 
-                // Tạo hai nút BFS và DFS
                 let bfsButton = document.createElement('button');
                 bfsButton.textContent = "Duyệt BFS";
                 bfsButton.onclick = () => {
@@ -375,7 +358,6 @@
                 };
                 divFunction.appendChild(dfsButton);
 
-                // Hàm Duyệt BFS
                 function bfsTraversal(startNode) {
                     let visited = Array(n).fill(false);
                     let queue = [startNode];
@@ -397,7 +379,6 @@
                         });
                     }
 
-                    // Hiển thị thứ tự duyệt BFS và đỉnh cha
                     let orderDiv = document.createElement('div');
                     orderDiv.innerHTML = "<h3>Thứ tự duyệt BFS:</h3>";
                     let orderList = document.createElement('ul');
@@ -415,9 +396,9 @@
                         let listItem = document.createElement('li');
                         if (parent[i] !== null) {
                             listItem.textContent = `Đỉnh ${i + 1} có đỉnh cha: ${parent[i]}`;
-                        } else if(i+1==startNodeInput.value) {
+                        } else if (i + 1 == startNodeInput.value) {
                             listItem.textContent = `Đỉnh ${i + 1} không có đỉnh cha (là đỉnh bắt đầu)`;
-                        }else{
+                        } else {
                             listItem.textContent = `Đỉnh ${i + 1} không được duyệt`;
                         }
                         parentList.appendChild(listItem);
@@ -426,15 +407,14 @@
 
                     divFunction.appendChild(orderDiv);
                     divFunction.appendChild(parentDiv);
-                    contentDiv.innerHTML = ""; // Xóa nội dung cũ trước khi thêm mới
+                    contentDiv.innerHTML = "";
                     contentDiv.appendChild(divFunction);
                 }
 
-                // Hàm Duyệt DFS
                 function dfsTraversal(startNode) {
                     let visited = Array(n).fill(false);
                     let order = [];
-                    let parent = Array(n).fill(null); 
+                    let parent = Array(n).fill(null);
 
                     function dfs(node) {
                         visited[node] = true;
@@ -450,7 +430,6 @@
 
                     dfs(startNode);
 
-                    // Hiển thị thứ tự duyệt DFS và đỉnh cha
                     let orderDiv = document.createElement('div');
                     orderDiv.innerHTML = "<h3>Thứ tự duyệt DFS:</h3>";
                     let orderList = document.createElement('ul');
@@ -468,7 +447,7 @@
                         let listItem = document.createElement('li');
                         if (parent[i] !== null) {
                             listItem.textContent = `Đỉnh ${i + 1} có đỉnh cha: ${parent[i]}`;
-                        }else if(i+1==startNodeInput.value){
+                        } else if (i + 1 == startNodeInput.value) {
                             listItem.textContent = `Đỉnh ${i + 1} không có đỉnh cha (là đỉnh bắt đầu)`;
                         } else {
                             listItem.textContent = `Đỉnh ${i + 1} không được duyệt`;
@@ -479,13 +458,201 @@
 
                     divFunction.appendChild(orderDiv);
                     divFunction.appendChild(parentDiv);
-                    contentDiv.innerHTML = ""; 
+                    contentDiv.innerHTML = "";
                     contentDiv.appendChild(divFunction);
                 }
 
-                contentDiv.innerHTML = ""; 
+                contentDiv.innerHTML = "";
                 contentDiv.appendChild(divFunction);
+            } else if (functionNumber == 3) {
+                let h2 = document.createElement('h2');
+                h2.textContent = "Kiểm tra chu trình trong đồ thị:";
+                divFunction.appendChild(h2);
+
+                function findCycleUndirected() {
+                    let visited = Array(n).fill(false);
+                    let parent = Array(n).fill(-1);
+                    let cycle = [];
+
+                    function dfs(node) {
+                        visited[node] = true;
+
+                        for (let neighbor of adjacencyList[node]) {
+                            neighbor--;
+                            if (!visited[neighbor]) {
+                                parent[neighbor] = node;
+                                if (dfs(neighbor)) return true;
+                            } else if (neighbor !== parent[node]) {
+                                cycle = [];
+                                let current = node;
+                                cycle.push(neighbor + 1);
+                                while (current !== neighbor) {
+                                    cycle.push(current + 1);
+                                    current = parent[current];
+                                }
+                                cycle.push(neighbor + 1);
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+
+                    for (let i = 0; i < n; i++) {
+                        if (!visited[i]) {
+                            if (dfs(i)) return cycle;
+                        }
+                    }
+                    return null;
+                }
+
+                function findCycleDirected() {
+                    let visited = Array(n).fill(false);
+                    let recursionStack = Array(n).fill(false);
+                    let cycle = [];
+                    let parent = Array(n).fill(-1);
+
+                    function dfs(node) {
+                        visited[node] = true;
+                        recursionStack[node] = true;
+
+                        for (let neighbor of adjacencyList[node]) {
+                            neighbor--;
+                            if (!visited[neighbor]) {
+                                parent[neighbor] = node;
+                                if (dfs(neighbor)) return true;
+                            } else if (recursionStack[neighbor]) {
+                                cycle = [];
+                                let current = node;
+                                cycle.push(neighbor + 1);
+                                while (current !== neighbor) {
+                                    cycle.push(current + 1);
+                                    current = parent[current];
+                                }
+                                cycle.push(neighbor + 1);
+                                return true;
+                            }
+                        }
+
+                        recursionStack[node] = false;
+                        return false;
+                    }
+
+                    for (let i = 0; i < n; i++) {
+                        if (!visited[i]) {
+                            if (dfs(i)) return cycle;
+                        }
+                    }
+                    return null;
+                }
+
+
+                let cycle = graphType === "undirected" ? findCycleUndirected() : findCycleDirected();
+
+
+                let resultDiv = document.createElement('div');
+                if (cycle) {
+                    resultDiv.innerHTML = `<h3>Đồ thị có chu trình:</h3><p>Chu trình: ${cycle.reverse().join(" → ")}</p>`;
+                } else {
+                    resultDiv.innerHTML = "<h3>Đồ thị không có chu trình.</h3>";
+                }
+                divFunction.appendChild(resultDiv);
+            } else if (functionNumber == 4) {
+                let h2 = document.createElement('h2');
+                h2.textContent = "Liệt kê các thành phần liên thông:";
+                divFunction.appendChild(h2);
+
+                function SCC() {
+                    let visited = Array(n).fill(false);
+                    let components = [];
+
+                    function dfs(node, component) {
+                        visited[node] = true;
+                        component.push(node + 1);
+                        adjacencyList[node].forEach(neighbor => {
+                            if (!visited[neighbor - 1]) {
+                                dfs(neighbor - 1, component);
+                            }
+                        });
+                    }
+
+                    for (let i = 0; i < n; i++) {
+                        if (!visited[i]) {
+                            let component = [];
+                            dfs(i, component);
+                            components.push(component);
+                        }
+                    }
+
+                    return components;
+                }
+
+                function strongSCC() {
+                    let visited = Array(n).fill(false);
+                    let stack = [];
+                    let components = [];
+
+                    function dfs1(node) {
+                        visited[node] = true;
+                        adjacencyList[node].forEach(neighbor => {
+                            if (!visited[neighbor - 1]) {
+                                dfs1(neighbor - 1);
+                            }
+                        });
+                        stack.push(node);
+                    }
+
+                    function dfs2(node, component, transposeAdjList) {
+                        visited[node] = true;
+                        component.push(node + 1);
+                        transposeAdjList[node].forEach(neighbor => {
+                            if (!visited[neighbor - 1]) {
+                                dfs2(neighbor - 1, component, transposeAdjList);
+                            }
+                        });
+                    }
+
+                    let transposeAdjList = Array.from({ length: n }, () => []);
+                    for (let i = 0; i < n; i++) {
+                        adjacencyList[i].forEach(neighbor => {
+                            transposeAdjList[neighbor - 1].push(i + 1);
+                        });
+                    }
+
+                    for (let i = 0; i < n; i++) {
+                        if (!visited[i]) {
+                            dfs1(i);
+                        }
+                    }
+
+                    visited.fill(false);
+                    while (stack.length > 0) {
+                        let node = stack.pop();
+                        if (!visited[node]) {
+                            let component = [];
+                            dfs2(node, component, transposeAdjList);
+                            components.push(component);
+                        }
+                    }
+
+                    return components;
+                }
+
+                let components = graphType === "undirected"
+                    ? SCC()
+                    : strongSCC();
+
+                let resultDiv = document.createElement('div');
+                resultDiv.innerHTML = "<h3>Các thành phần liên thông:</h3>";
+                let componentList = document.createElement('ul');
+                components.forEach((component, index) => {
+                    let listItem = document.createElement('li');
+                    listItem.textContent = `Thành phần liên thông ${index + 1}: [${component.join(", ")}]`;
+                    componentList.appendChild(listItem);
+                });
+                resultDiv.appendChild(componentList);
+                divFunction.appendChild(resultDiv);
             }
+
 
             contentDiv.appendChild(divFunction);
             contentDiv.style.display = "block";
