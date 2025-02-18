@@ -170,6 +170,42 @@ def shortest_path(state):
         messagebox.showerror("Lỗi", "Không có đường đi giữa các đỉnh này.")
     except ValueError:
         messagebox.showerror("Lỗi", "Vui lòng nhập đúng số đỉnh.")
+
+
+def topo():
+    try:
+        listTopo = list(nx.topological_sort(G))
+        messagebox.showinfo("Thứ tự topo", " -> ".join(map(str, listTopo)))
+    except nx.NetworkXUnfeasible:
+        messagebox.showerror("Lỗi","Đồ thị có chu trình, không thể sắp xếp topo!")
+    except Exception as e:
+        messagebox.showerror("Lỗi", f"Lỗi {e} xảy ra!")
+    
+
+def spanning():
+    global G, fig, canvas
+    if G.is_directed():
+        undirected_G = G.to_undirected()
+    else:
+        undirected_G = G
+    if not nx.is_connected(undirected_G):
+        messagebox.showerror("Lỗi", "Đồ thị không liên thông, không thể tìm cây khung nhỏ nhất!")
+        return
+    MST = nx.minimum_spanning_tree(undirected_G)
+    edges = list(MST.edges(data=True))
+    total_weight = sum(data['weight'] for _, _, data in edges)
+    edge_list_str = "\n".join([f"{u} - {v}: {data['weight']}" for u, v, data in edges])
+    fig.clear()
+    ax = fig.add_subplot(111)
+    pos = nx.spring_layout(undirected_G)
+    nx.draw(undirected_G, pos, ax=ax, with_labels=True, node_color="lightgray", edge_color="gray", style="dashed")
+    nx.draw(MST, pos, ax=ax, with_labels=True, node_color="skyblue", edge_color="blue", width=2)
+    edge_labels = {(u, v): data['weight'] for u, v, data in edges}
+    nx.draw_networkx_edge_labels(MST, pos, edge_labels=edge_labels, ax=ax)
+    canvas.draw()
+    messagebox.showinfo("Cây khung nhỏ nhất", f"Danh sách cạnh trong MST:\n{edge_list_str}\n\nTổng trọng số: {total_weight}")
+    draw_graph()
+
 root = tk.Tk()
 root.title("Graph Editor")
 root.geometry("1000x600")
@@ -220,12 +256,23 @@ buttons = [
     ("Thành phần liên thông", find_connected_components),
     ("Đường đi ngắn nhất trên đồ thị(Dijkstra)",lambda:shortest_path("dijkstra")),
     ("Đường đi ngắn nhất trên đồ thị(Bellman Ford)",lambda:shortest_path("bellman")),
-    ("Đường đi ngắn nhất trên đồ thị(Floyd Warshall)",lambda:shortest_path("floyd"))
+    ("Đường đi ngắn nhất trên đồ thị(Floyd Warshall)",lambda:shortest_path("floyd")),
+    ("Thứ tự sắp xếp Topo",topo),
+    ("Khung cây nhỏ nhất của đồ thị",spanning)
 ]
 
-for text, command in buttons:
-    btn = tk.Button(left_frame, text=text, command=command, bg="#00ceff", fg="white", padx=10, pady=5, border=0)
-    btn.pack(fill=tk.X, pady=2)
+for i in range(0, len(buttons), 2):
+    row_frame = tk.Frame(left_frame, bg="#f0f0f0")
+    row_frame.pack(fill=tk.X, pady=2)
+    text1, command1 = buttons[i]
+    btn1 = tk.Button(row_frame, text=text1,command=command1, bg="#00ceff", fg="white", padx=10, pady=5, border=0)
+    btn1.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2)
+
+    if i + 1 < len(buttons):
+        text2, command2 = buttons[i + 1]
+        btn2 = tk.Button(row_frame, text=text2,command=command2, bg="#00ceff", fg="white", padx=10, pady=5, border=0)
+        btn2.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=2)
+
 
 fig, ax = plt.subplots(figsize=(5, 4))
 canvas = FigureCanvasTkAgg(fig, master=right_frame)
