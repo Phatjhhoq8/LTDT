@@ -185,27 +185,95 @@ def topo():
 def spanning():
     global G, fig, canvas
     if G.is_directed():
-        undirected_G = G.to_undirected()
+        if not nx.is_weakly_connected(G):
+            messagebox.showerror("Lỗi", "Đồ thị phải liên thông yếu!")
+            return
+        MST = nx.minimum_spanning_arborescence(G)
+        edges = list(MST.edges(data=True))
+        total_weight = sum(data['weight'] for _, _, data in edges)
+        edge_list_str = "\n".join([f"{u} - {v}: {data['weight']}" for u, v, data in edges])
+        fig.clear()
+        ax = fig.add_subplot(111)
+        pos = nx.spring_layout(G)
+        nx.draw(G, pos, ax=ax, with_labels=True, node_color="lightgray", edge_color="gray", style="dashed")
+        nx.draw(MST, pos, ax=ax, with_labels=True, node_color="skyblue", edge_color="blue", width=2)
+        edge_labels = {(u, v): data['weight'] for u, v, data in edges}
+        nx.draw_networkx_edge_labels(MST, pos, edge_labels=edge_labels, ax=ax)
+        canvas.draw()
+        messagebox.showinfo("Cây khung nhỏ nhất", f"Danh sách cạnh trong MST:\n{edge_list_str}\n\nTổng trọng số: {total_weight}")
+        draw_graph()
     else:
-        undirected_G = G
-    if not nx.is_connected(undirected_G):
-        messagebox.showerror("Lỗi", "Đồ thị không liên thông, không thể tìm cây khung nhỏ nhất!")
-        return
-    MST = nx.minimum_spanning_tree(undirected_G)
-    edges = list(MST.edges(data=True))
-    total_weight = sum(data['weight'] for _, _, data in edges)
-    edge_list_str = "\n".join([f"{u} - {v}: {data['weight']}" for u, v, data in edges])
-    fig.clear()
-    ax = fig.add_subplot(111)
-    pos = nx.spring_layout(undirected_G)
-    nx.draw(undirected_G, pos, ax=ax, with_labels=True, node_color="lightgray", edge_color="gray", style="dashed")
-    nx.draw(MST, pos, ax=ax, with_labels=True, node_color="skyblue", edge_color="blue", width=2)
-    edge_labels = {(u, v): data['weight'] for u, v, data in edges}
-    nx.draw_networkx_edge_labels(MST, pos, edge_labels=edge_labels, ax=ax)
-    canvas.draw()
-    messagebox.showinfo("Cây khung nhỏ nhất", f"Danh sách cạnh trong MST:\n{edge_list_str}\n\nTổng trọng số: {total_weight}")
-    draw_graph()
+        if not nx.is_connected(G):
+            messagebox.showerror("Lỗi", "Đồ thị không liên thông, không thể tìm cây khung nhỏ nhất!")
+            return
+        MST = nx.minimum_spanning_tree(G)
+        edges = list(MST.edges(data=True))
+        total_weight = sum(data['weight'] for _, _, data in edges)
+        edge_list_str = "\n".join([f"{u} - {v}: {data['weight']}" for u, v, data in edges])
+        fig.clear()
+        ax = fig.add_subplot(111)
+        pos = nx.spring_layout(G)
+        nx.draw(G, pos, ax=ax, with_labels=True, node_color="lightgray", edge_color="gray", style="dashed")
+        nx.draw(MST, pos, ax=ax, with_labels=True, node_color="skyblue", edge_color="blue", width=2)
+        edge_labels = {(u, v): data['weight'] for u, v, data in edges}
+        nx.draw_networkx_edge_labels(MST, pos, edge_labels=edge_labels, ax=ax)
+        canvas.draw()
+        messagebox.showinfo("Cây khung nhỏ nhất", f"Danh sách cạnh trong MST:\n{edge_list_str}\n\nTổng trọng số: {total_weight}")
+        draw_graph()
 
+def BFS(residual_graph, source, sink, parent):
+    visited = set()
+    queue = [source]
+    visited.add(source)
+    while queue:
+        u = queue.pop(0)
+        for v in residual_graph[u]:  
+            if v not in visited and residual_graph[u][v] > 0:
+                queue.append(v)
+                visited.add(v)
+                parent[v] = u
+                if v == sink:
+                    return True 
+    return False 
+
+def Ford_Fulkerson():
+    global G
+    if G is None or G.number_of_edges() == 0:
+        messagebox.showerror("Lỗi", "Đồ thị chưa có cạnh nào hoặc chưa được tạo.")
+        return
+    try:
+        source = int(start_node_entry.get())
+        sink = int(end_node_entry.get())
+        if source not in G.nodes() or sink not in G.nodes():
+            raise KeyError("Đỉnh nguồn hoặc đích không tồn tại trong đồ thị.")
+        residual_graph = {u: {} for u in G.nodes()}
+        for u, v, d in G.edges(data=True):
+            weight = d.get('weight', 1)
+            residual_graph[u][v] = weight
+            if v not in residual_graph:
+                residual_graph[v] = {} 
+            residual_graph[v][u] = 0  
+        parent = {} 
+        max_flow = 0
+        while BFS(residual_graph, source, sink, parent):
+            path_flow = float("Inf")
+            v = sink
+            while v != source:
+                u = parent[v]
+                path_flow = min(path_flow, residual_graph[u][v])
+                v = u
+            v = sink
+            while v != source:
+                u = parent[v]
+                residual_graph[u][v] -= path_flow
+                residual_graph[v][u] += path_flow
+                v = u
+            max_flow += path_flow 
+        messagebox.showinfo("Luồng cực đại", f"Tổng luồng cực đại: {max_flow}")
+    except ValueError:
+        messagebox.showerror("Lỗi", "Vui lòng nhập số nguyên hợp lệ cho đỉnh nguồn và đích.")
+    except KeyError as e:
+        messagebox.showerror("Lỗi", str(e))
 root = tk.Tk()
 root.title("Graph Editor")
 root.geometry("1000x600")
@@ -258,7 +326,8 @@ buttons = [
     ("Đường đi ngắn nhất trên đồ thị(Bellman Ford)",lambda:shortest_path("bellman")),
     ("Đường đi ngắn nhất trên đồ thị(Floyd Warshall)",lambda:shortest_path("floyd")),
     ("Thứ tự sắp xếp Topo",topo),
-    ("Khung cây nhỏ nhất của đồ thị",spanning)
+    ("Khung cây nhỏ nhất của đồ thị",spanning),
+    ("Luồng cực đại",Ford_Fulkerson)
 ]
 
 for i in range(0, len(buttons), 2):
